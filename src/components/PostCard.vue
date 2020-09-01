@@ -1,14 +1,23 @@
 <template>
   <v-card>
-    <v-col class="text-right">
-      
-      <v-btn class="ma-2" outlined x-small fab color="indigo" @click="editPost()">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-      <v-btn class="ma-2" outlined x-small fab color="indigo" @click="deletePost()">
-        <v-icon>mdi-delete</v-icon>
-      </v-btn>
-    </v-col>
+    <v-list-item>
+      <v-list-item-avatar @click="openProfile(postProp.username)">
+        <img
+          :src="getUserPicture"
+        >
+      </v-list-item-avatar>
+      <v-list-item-content>
+        <v-list-item-title class="headline">{{getUserName}}</v-list-item-title>
+      </v-list-item-content>
+      <v-row v-if="postProp.username === getActiveUser" justify="end">
+        <v-btn class="ma-2" outlined x-small fab color="primary" @click="startEdit()">
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+        <v-btn class="ma-2" outlined x-small fab color="primary" @click="deletePost(postProp.id)">
+          <v-icon>mdi-delete</v-icon>
+        </v-btn>
+      </v-row>
+    </v-list-item>
     <v-img v-if="postProp.imageUrl !== ''"
       :src="postProp.imageUrl"
       max-height="300"
@@ -19,6 +28,7 @@
 </template>
 
 <script>
+import {mapActions, mapGetters} from 'vuex'
 export default{
   props: ['postProp'],
   data () {
@@ -28,22 +38,32 @@ export default{
     }
   },
   methods:{
-    editPost () {
+    openProfile(username){
+      this.$router.push(`/profile/${username}`)
+    },
+    startEdit(){
       this.editButtonPressed = true
       this.field = this.postProp.text
     },
-    deletePost () {
-      this.$emit('deletePost')
-    },
     edited () {
       if(this.field !== ''){
-        this.$emit('edited', this.field)
+        this.editPost({id: this.postProp.id, newText: this.field})
         this.field = ''
         this.editButtonPressed = false
       }
     },
     cancelEditing (){
       this.editButtonPressed = false
+    },
+    ...mapActions("feed", ["editPost", "deletePost"])
+  },
+  computed:{
+    ...mapGetters('feed', ['getUserInfo', 'getActiveUser']),
+    getUserPicture(){
+      return this.getUserInfo(this.postProp.username).pictureUrl
+    },
+    getUserName(){
+      return this.getUserInfo(this.postProp.username).name
     }
   }
 }
