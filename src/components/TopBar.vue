@@ -39,8 +39,9 @@
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" absolute style="position:fixed; top:0; left:0; overflow-y:scroll;" temporary>
       <v-list-item @click="openProfile">
-        <v-list-item-avatar>
-          <v-img :src="getActiveUserInfo.pictureUrl"></v-img>
+        <v-list-item-avatar color="primary">
+          <v-img v-if="getActiveUserInfo.pictureUrl !== ''" :src="getActiveUserInfo.pictureUrl"></v-img>
+          <v-icon dark v-else>mdi-account-circle</v-icon>
         </v-list-item-avatar>
 
         <v-list-item-content>
@@ -64,7 +65,7 @@
             <v-icon>mdi-logout</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            <v-list-item-title>Sair</v-list-item-title>
+            <v-list-item-title>Sign Out</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item>
@@ -88,19 +89,19 @@ export default {
   },
   methods: {
     openFeed(){
-      this.$router.push(`/feed/${this.getActiveUser}`)
+      this.$router.push('/feed')
     },
     openProfile(){
       this.$router.push(`/profile/${this.getActiveUser}`)
     },
-    logout(){
-      this.changeActiveUser(undefined)
+    async logout(){
+      await this.logOut()
       this.$router.push("/")
     },
     publish(){
       const imageUrl = this.imageInput ? URL.createObjectURL(this.imageInput) : ""
       if(this.field !== '' || imageUrl !== ""){
-        this.publishPost({field: this.field, imageUrl: imageUrl})
+        this.publishPost({field: this.field, picture: this.imageInput})
         this.closeDialog()
       }
     },
@@ -109,7 +110,7 @@ export default {
       this.imageInput = undefined;
       this.dialog = false;
     },
-    ...mapActions("feed", ["publishPost", "changeDarkmode", "changeActiveUser"])
+    ...mapActions("feed", ["publishPost", "changeDarkmode", "logOut"])
   },
   computed: {
     ...mapGetters("feed", ["getDarkmode", "getActiveUser", "getActiveUserInfo"]),

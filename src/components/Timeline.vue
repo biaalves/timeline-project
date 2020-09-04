@@ -2,7 +2,7 @@
   <v-main>
     <TopBar/>
     <div class="timeline">
-      <div v-for="(post, i) in getPublishedContent" :key="i">
+      <div v-for="(post, i) in posts" :key="i">
         <PostCard :postProp="post"/>
       </div>
     </div>
@@ -10,17 +10,27 @@
 </template>
 
 <script>
-import {mapGetters} from "vuex";
 import PostCard from "./PostCard";
 import TopBar from './TopBar'
+import {firestore} from '../firebase'
 export default {
   components: {
     PostCard,
     TopBar
   },
-  computed: {
-    ...mapGetters("feed", ["getPublishedContent"])
-    
+  data() {
+    return {
+      posts: []
+    }
+  },
+  created () {
+    firestore.collection('posts').orderBy("created_at", "desc")
+    .onSnapshot((queueSnapShot) => {
+      this.posts = []
+      queueSnapShot.forEach((doc) => {
+        this.posts.push(doc.data())
+      })
+    })
   }
 };
 </script>

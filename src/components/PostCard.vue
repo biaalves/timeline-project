@@ -1,13 +1,12 @@
 <template>
   <v-card>
     <v-list-item>
-      <v-list-item-avatar @click="openProfile(postProp.username)">
-        <img
-          :src="getUserPicture"
-        >
+      <v-list-item-avatar color="primary" @click="openProfile(postProp.username)">
+        <img v-if="userInfo.pictureUrl !== ''" :src="userInfo.pictureUrl">
+        <v-icon dark v-else>mdi-account-circle</v-icon>
       </v-list-item-avatar>
       <v-list-item-content>
-        <v-list-item-title class="headline">{{getUserName}}</v-list-item-title>
+        <v-list-item-title class="headline">{{userInfo.name}}</v-list-item-title>
       </v-list-item-content>
       <v-row v-if="postProp.username === getActiveUser" justify="end">
         <v-btn class="ma-2" outlined x-small fab color="primary" @click="startEdit()">
@@ -29,6 +28,7 @@
 
 <script>
 import {mapActions, mapGetters} from 'vuex'
+import {firestore} from '../firebase'
 export default{
   props: ['postProp'],
   data () {
@@ -38,32 +38,42 @@ export default{
     }
   },
   methods:{
-    openProfile(username){
+    openProfile(username) {
       this.$router.push(`/profile/${username}`)
     },
-    startEdit(){
+    startEdit() {
       this.editButtonPressed = true
       this.field = this.postProp.text
     },
     edited () {
-      if(this.field !== ''){
-        this.editPost({id: this.postProp.id, newText: this.field})
+      if(this.field !== '') {
+        this.editPost({id: this.postProp.id, field: this.field})
         this.field = ''
         this.editButtonPressed = false
       }
     },
-    cancelEditing (){
+    cancelEditing(){
       this.editButtonPressed = false
     },
     ...mapActions("feed", ["editPost", "deletePost"])
   },
   computed:{
-    ...mapGetters('feed', ['getUserInfo', 'getActiveUser']),
-    getUserPicture(){
-      return this.getUserInfo(this.postProp.username).pictureUrl
-    },
-    getUserName(){
-      return this.getUserInfo(this.postProp.username).name
+    ...mapGetters('feed', ['getActiveUser']),
+  },
+  asyncComputed: {
+    userInfo: {
+      async get () {
+        const querySnapshot = await firestore
+          .collection("users")
+          .where("username", "==", this.postProp.username)
+          .get();
+        let userInfo = { pictureUrl: "", name: "", username: "" };
+        querySnapshot.forEach(doc => {
+          userInfo = doc.data();
+        });
+        return userInfo;
+      },
+      default :  { pictureUrl: "", name: "", username: "" }
     }
   }
 }
